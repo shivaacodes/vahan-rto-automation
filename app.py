@@ -12,6 +12,24 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
+    /* Remove Streamlit's built-in gap between every element inside columns */
+    div[data-testid="column"] > div {
+        gap: 0 !important;
+    }
+    div[data-testid="column"] > div > div[data-testid="stVerticalBlockBorderWrapper"],
+    div[data-testid="column"] > div > div {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    /* Also zero out the internal stVerticalBlock padding */
+    div[data-testid="stVerticalBlock"] {
+        gap: 0.6rem !important;
+    }
+    div[data-testid="column"] div[data-testid="stVerticalBlock"] {
+        gap: 0.5rem !important;
+        padding-top: 0 !important;
+    }
+
     .main .block-container {
         padding-top: 1.5rem;
         padding-left: 2.5rem;
