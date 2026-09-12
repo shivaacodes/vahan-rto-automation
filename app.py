@@ -14,12 +14,6 @@ st.markdown("""
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    
-    /* Set app background to a light beige/cream */
-    .stApp {
-        background-color: #FBF9F6;
-    }
-    
     /* Modernize typography and spacing */
     .main .block-container {
         padding-top: 2rem;
@@ -30,22 +24,27 @@ st.markdown("""
     .title-header {
         font-size: 2.2rem;
         font-weight: 700;
-        color: #2D3748;
+        color: #2D3748 !important;
         margin-bottom: 0.5rem;
     }
     .subtitle {
-        color: #718096;
+        color: #718096 !important;
         font-size: 1.1rem;
         margin-bottom: 2rem;
     }
     
     /* Style the metrics cards */
     div[data-testid="metric-container"] {
-        background-color: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        padding: 1rem;
-        border-radius: 8px;
+        background-color: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+        padding: 1rem !important;
+        border-radius: 8px !important;
+    }
+    /* Force text color in metrics in case of dark mode conflicts */
+    div[data-testid="metric-container"] label, 
+    div[data-testid="metric-container"] div {
+        color: #1E293B !important;
     }
     
     /* Style the run button */
