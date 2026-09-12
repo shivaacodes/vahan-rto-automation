@@ -1,5 +1,6 @@
 import asyncio
 import os
+import sys
 import logging
 from datetime import datetime
 from playwright.async_api import async_playwright
@@ -32,8 +33,9 @@ def setup_logger(log_dir):
 
 async def safe_select(page, label_selector, item_selector):
     """Click a primefaces dropdown label and select an item, then wait for networkidle."""
-    await page.locator(label_selector).click()
-    await page.locator(item_selector).click()
+    await page.locator(label_selector).click(force=True)
+    await asyncio.sleep(0.5)
+    await page.locator(item_selector).click(force=True)
     await page.wait_for_load_state("networkidle")
     await asyncio.sleep(1) # Extra buffer for JS execution
 
@@ -149,6 +151,7 @@ async def main():
                 
         except Exception as e:
             logger.error(f"Fatal error during execution: {str(e)}")
+            sys.exit(1)
         finally:
             await browser.close()
 
