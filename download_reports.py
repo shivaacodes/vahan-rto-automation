@@ -88,10 +88,14 @@ async def process_rto(page, rto, output_dir, logger):
     
     # 5. Save file
     try:
-        if '(' in rto and ')' in rto:
+        if ' - ' in rto:
+            code_part = rto.split(' - ')[-1]
+            if '(' in code_part:
+                rto_code = code_part.split('(')[0].strip()
+            else:
+                rto_code = code_part.strip()
+        elif '(' in rto and ')' in rto:
             rto_code = rto.split('(')[-1].split(')')[0].strip()
-        elif ' - ' in rto:
-            rto_code = rto.split(' - ')[0].strip()
         else:
             rto_code = rto.replace(" ", "_")
     except:
