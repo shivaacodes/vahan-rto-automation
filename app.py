@@ -4,18 +4,14 @@ import os
 from datetime import datetime
 import config
 
-# Must be the first Streamlit command
 st.set_page_config(page_title="Vahan RTO Dashboard", page_icon="🏛️", layout="wide")
 
-# Custom CSS for a modern, professional look
 st.markdown("""
     <style>
-    /* Hide Streamlit default branding */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* Modernize typography and spacing */
     .main .block-container {
         padding-top: 2rem;
         padding-left: 2.5rem;
@@ -23,102 +19,63 @@ st.markdown("""
         font-family: 'Inter', -apple-system, sans-serif;
     }
 
-    /* Style the main title */
     .title-header {
-        font-size: 2.2rem;
+        font-size: 2rem;
         font-weight: 700;
         color: #2D3748 !important;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.25rem;
     }
     .subtitle {
         color: #718096 !important;
-        font-size: 1.1rem;
-        margin-bottom: 2rem;
+        font-size: 0.95rem;
+        margin-bottom: 0;
     }
 
-    /* Style the metrics cards */
+    /* Section label */
+    .section-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 0.4rem;
+        margin-top: 1.2rem;
+    }
+
+    /* Metric cards */
     div[data-testid="metric-container"] {
         background-color: #FFFFFF !important;
         border: 1px solid #E2E8F0 !important;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
-        padding: 1rem !important;
+        padding: 0.75rem 1rem !important;
         border-radius: 8px !important;
     }
-    /* Force text color in metrics in case of dark mode conflicts */
     div[data-testid="metric-container"] label,
     div[data-testid="metric-container"] div {
         color: #1E293B !important;
     }
+    /* Tighten metric font sizes */
+    div[data-testid="metric-container"] [data-testid="stMetricValue"] {
+        font-size: 1.2rem !important;
+    }
 
-    /* Style the run button */
+    /* Run button */
     .stButton>button {
         width: 100%;
         background-color: #0F172A;
         color: white;
         border-radius: 6px;
-        padding: 0.75rem;
+        padding: 0.65rem;
         font-weight: 600;
-        font-size: 1.1rem;
+        font-size: 1rem;
         border: none;
         transition: all 0.2s ease;
-        margin-top: 0.5rem;
+        margin-top: 0.25rem;
     }
     .stButton>button:hover {
         background-color: #334155;
         border: none;
         color: white;
-    }
-
-    /* Left panel separator */
-    .left-panel {
-        padding-right: 1.5rem;
-        border-right: 1px solid #E2E8F0;
-    }
-
-    /* Mac Terminal Window */
-    .mac-terminal {
-        background-color: #1E1E1E;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        overflow: hidden;
-        font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-        height: 100%;
-    }
-    .mac-terminal-header {
-        background-color: #323232;
-        padding: 8px 12px;
-        display: flex;
-        align-items: center;
-        border-bottom: 1px solid #111;
-    }
-    .mac-dots {
-        display: flex;
-        gap: 6px;
-    }
-    .mac-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-    }
-    .mac-dot.red { background-color: #FF5F56; }
-    .mac-dot.yellow { background-color: #FFBD2E; }
-    .mac-dot.green { background-color: #27C93F; }
-    .mac-terminal-title {
-        color: #999;
-        font-size: 0.85rem;
-        flex-grow: 1;
-        text-align: center;
-        font-family: -apple-system, sans-serif;
-        margin-right: 42px;
-    }
-    .mac-terminal-body {
-        padding: 14px;
-        color: #F8F8F2;
-        font-size: 0.82rem;
-        line-height: 1.6;
-        white-space: pre-wrap;
-        height: 480px;
-        overflow-y: auto;
     }
 
     /* Green progress bar */
@@ -131,113 +88,126 @@ st.markdown("""
         border-radius: 9999px !important;
     }
 
-    /* Live pulse badge */
+    /* Live / done badge */
     @keyframes pulse-dot {
         0%   { opacity: 1; }
         50%  { opacity: 0.3; }
         100% { opacity: 1; }
     }
     .live-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: #dcfce7;
-        color: #15803d;
-        font-size: 0.78rem;
-        font-weight: 600;
-        padding: 3px 10px;
-        border-radius: 9999px;
-        border: 1px solid #86efac;
-        margin-bottom: 0.5rem;
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #dcfce7; color: #15803d;
+        font-size: 0.75rem; font-weight: 600;
+        padding: 3px 10px; border-radius: 9999px;
+        border: 1px solid #86efac; margin-bottom: 0.4rem;
     }
     .live-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
+        width: 8px; height: 8px; border-radius: 50%;
         background-color: #22c55e;
         animation: pulse-dot 1.2s ease-in-out infinite;
     }
     .done-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: #f0fdf4;
-        color: #166534;
-        font-size: 0.78rem;
-        font-weight: 600;
-        padding: 3px 10px;
-        border-radius: 9999px;
-        border: 1px solid #86efac;
-        margin-bottom: 0.5rem;
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #f0fdf4; color: #166534;
+        font-size: 0.75rem; font-weight: 600;
+        padding: 3px 10px; border-radius: 9999px;
+        border: 1px solid #86efac; margin-bottom: 0.4rem;
     }
-    .stat-bar {
-        display: flex;
-        gap: 12px;
-        margin-top: 0.5rem;
-    }
+    .stat-bar { display: flex; gap: 8px; margin-top: 0.5rem; }
     .stat-pill {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 6px 14px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #1e293b;
-        flex: 1;
-        text-align: center;
+        background: #f8fafc; border: 1px solid #e2e8f0;
+        border-radius: 8px; padding: 5px 10px;
+        font-size: 0.8rem; font-weight: 600;
+        color: #1e293b; flex: 1; text-align: center;
     }
-    .stat-pill.green { background: #f0fdf4; border-color: #86efac; color: #166534; }
-    .stat-pill.red   { background: #fff1f2; border-color: #fca5a5; color: #991b1b; }
+    .stat-pill.green { background:#f0fdf4; border-color:#86efac; color:#166534; }
+    .stat-pill.red   { background:#fff1f2; border-color:#fca5a5; color:#991b1b; }
+
+    /* Mac Terminal */
+    .mac-terminal {
+        background-color: #1E1E1E;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        overflow: hidden;
+        font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    }
+    .mac-terminal-header {
+        background-color: #323232;
+        padding: 8px 12px;
+        display: flex; align-items: center;
+        border-bottom: 1px solid #111;
+    }
+    .mac-dots { display: flex; gap: 6px; }
+    .mac-dot  { width: 12px; height: 12px; border-radius: 50%; }
+    .mac-dot.red    { background-color: #FF5F56; }
+    .mac-dot.yellow { background-color: #FFBD2E; }
+    .mac-dot.green  { background-color: #27C93F; }
+    .mac-terminal-title {
+        color: #999; font-size: 0.82rem;
+        flex-grow: 1; text-align: center;
+        font-family: -apple-system, sans-serif;
+        margin-right: 42px;
+    }
+    .mac-terminal-body {
+        padding: 14px;
+        color: #F8F8F2;
+        font-size: 0.82rem;
+        line-height: 1.7;
+        white-space: pre-wrap;
+        height: calc(100vh - 160px);   /* fills remaining viewport height */
+        min-height: 460px;
+        overflow-y: auto;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# ── Header ──────────────────────────────────────────────────────────────────
+# ── Minimal full-width header ────────────────────────────────────────────────
 st.markdown('<div class="title-header">🏛️ Vahan Analytics Downloader</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Automated extraction system for daily RTO reports</div>', unsafe_allow_html=True)
 st.divider()
 
-# ── Configuration Metrics (2×2 grid above the split) ───────────────────────
-st.markdown("### Active Configuration")
-row1_col1, row1_col2 = st.columns(2)
-with row1_col1:
-    st.metric(label="Target State", value=config.FILTERS['State'].split('(')[0].strip())
-with row1_col2:
-    st.metric(label="Report Year", value=config.FILTERS['Year'])
+# ── Two columns — everything below the header lives inside them ──────────────
+left_col, right_col = st.columns([1, 1.5], gap="large")
 
-row2_col1, row2_col2 = st.columns(2)
-with row2_col1:
-    st.metric(label="Y-Axis Pivot", value=config.FILTERS['Y-Axis'])
-with row2_col2:
-    st.metric(label="X-Axis Pivot", value=config.FILTERS['X-Axis'])
-
-st.write("")  # Spacer
-
-# ── Two-column layout: Control | Terminal ─────────────────────────────────
-date_str = datetime.now().strftime("%Y-%m-%d")
+date_str   = datetime.now().strftime("%Y-%m-%d")
 output_dir = os.path.join(config.REPORTS_DIR, date_str)
 
-left_col, right_col = st.columns([1, 1.6], gap="large")
-
-# ── LEFT: Execution Control ──────────────────────────────────────────────────
+# ── LEFT COLUMN ──────────────────────────────────────────────────────────────
 with left_col:
-    st.markdown('<div class="left-panel">', unsafe_allow_html=True)
-    st.markdown("### Execution Control")
-    st.info(f"📁 **Output Destination:**\n`{output_dir}`", icon="ℹ️")
-    st.write("")
 
-    run_btn = st.button("▶  Initialize Data Extraction", type="primary")
+    # Active Configuration
+    st.markdown('<div class="section-label">Active Configuration</div>', unsafe_allow_html=True)
+    r1c1, r1c2 = st.columns(2)
+    with r1c1:
+        st.metric("Target State", config.FILTERS['State'].split('(')[0].strip())
+    with r1c2:
+        st.metric("Report Year", config.FILTERS['Year'])
 
-    progress_bar  = st.empty()
-    status_text   = st.empty()
-    st.markdown('</div>', unsafe_allow_html=True)
+    r2c1, r2c2 = st.columns(2)
+    with r2c1:
+        st.metric("Y-Axis Pivot", config.FILTERS['Y-Axis'])
+    with r2c2:
+        st.metric("X-Axis Pivot", config.FILTERS['X-Axis'])
 
-# ── RIGHT: Mac Terminal ───────────────────────────────────────────────────────
+    # Output destination
+    st.markdown('<div class="section-label">Output Destination</div>', unsafe_allow_html=True)
+    st.info(f"`{output_dir}`", icon="📁")
+
+    # Execution control
+    st.markdown('<div class="section-label">Execution Control</div>', unsafe_allow_html=True)
+    run_btn      = st.button("▶  Initialize Data Extraction", type="primary")
+    progress_bar = st.empty()
+    badge_cont   = st.empty()
+    stat_cont    = st.empty()
+    status_text  = st.empty()
+
+# ── RIGHT COLUMN ─────────────────────────────────────────────────────────────
 with right_col:
-    st.markdown("### Live Terminal Output")
+    st.markdown('<div class="section-label">Live Terminal Output</div>', unsafe_allow_html=True)
     log_container = st.empty()
 
-    def render_terminal(logs_text):
-        terminal_html = f"""
+    def render_terminal(body_html):
+        log_container.markdown(f"""
         <div class="mac-terminal">
             <div class="mac-terminal-header">
                 <div class="mac-dots">
@@ -247,42 +217,31 @@ with right_col:
                 </div>
                 <div class="mac-terminal-title">bash — download_reports.py</div>
             </div>
-            <div class="mac-terminal-body">{logs_text}</div>
-        </div>
-        """
-        log_container.markdown(terminal_html, unsafe_allow_html=True)
+            <div class="mac-terminal-body">{body_html}</div>
+        </div>""", unsafe_allow_html=True)
 
-    # Show idle terminal on page load
+    # Idle state
     render_terminal('<span style="color:#6EE7B7;">vahan-bot \$</span> Waiting for extraction command...')
 
-# ── Run logic (only triggers when button is clicked) ─────────────────────────
+# ── Run logic ────────────────────────────────────────────────────────────────
 if run_btn:
     render_terminal('<span style="color:#6EE7B7;">vahan-bot \$</span> Initializing Vahan Extraction Protocol...<br>')
     progress_bar.progress(0)
+    badge_cont.markdown('<div class="live-badge"><div class="live-dot"></div> RUNNING</div>', unsafe_allow_html=True)
 
-    badge_container = left_col.empty()
-    stat_container  = left_col.empty()
-
-    badge_container.markdown(
-        '<div class="live-badge"><div class="live-dot"></div> RUNNING</div>',
-        unsafe_allow_html=True
-    )
-
-    log_output     = []
-    saved_count    = 0
-    failed_count   = 0
-    total_rtos     = 87
+    log_output   = []
+    saved_count  = 0
+    failed_count = 0
+    total_rtos   = 87
 
     process = subprocess.Popen(
         ["python", "-u", "download_reports.py"],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1
+        text=True, bufsize=1
     )
 
     def colorize(line):
-        """Return HTML-coloured terminal line based on content."""
         prompt = '<span style="color:#6EE7B7;">vahan-bot \$</span> '
         if "Successfully saved" in line:
             return prompt + f'<span style="color:#4ADE80;">{line}</span>'
@@ -292,18 +251,14 @@ if run_btn:
             return prompt + f'<span style="color:#FBBF24;">{line}</span>'
         elif "Found" in line and "RTOs" in line:
             return prompt + f'<span style="color:#60A5FA;">{line}</span>'
-        else:
-            return prompt + line
+        return prompt + line
 
     for line in iter(process.stdout.readline, ''):
         line = line.strip()
         if not line:
             continue
-
         log_output.append(colorize(line))
-
-        display_logs = "<br>".join(log_output[-18:])
-        render_terminal(display_logs)
+        render_terminal("<br>".join(log_output[-22:]))
 
         if "Found" in line and "RTOs to process" in line:
             try:
@@ -313,35 +268,28 @@ if run_btn:
 
         if "Successfully saved" in line:
             saved_count += 1
-            progress_pct = min((saved_count + failed_count) / total_rtos, 1.0)
-            progress_bar.progress(progress_pct)
-
         if "Failed to process" in line or "Retry failed" in line:
             failed_count += 1
-            progress_pct = min((saved_count + failed_count) / total_rtos, 1.0)
-            progress_bar.progress(progress_pct)
 
-        # Update live stat pills every iteration
-        stat_container.markdown(f"""
+        done = saved_count + failed_count
+        if done > 0:
+            progress_bar.progress(min(done / total_rtos, 1.0))
+
+        stat_cont.markdown(f"""
         <div class="stat-bar">
             <div class="stat-pill green">✅ {saved_count} saved</div>
             <div class="stat-pill red">❌ {failed_count} failed</div>
-            <div class="stat-pill">{total_rtos - saved_count - failed_count} remaining</div>
+            <div class="stat-pill">{total_rtos - done} remaining</div>
         </div>""", unsafe_allow_html=True)
-
-        status_text.markdown(
-            f"**Progress:** `{saved_count + failed_count}` / `{total_rtos}` RTOs processed"
-        )
+        status_text.markdown(f"**Progress:** `{done}` / `{total_rtos}` RTOs")
 
     process.stdout.close()
-    return_code = process.wait()
+    rc = process.wait()
 
-    if return_code == 0:
+    if rc == 0:
         progress_bar.progress(1.0)
-        badge_container.markdown(
-            '<div class="done-badge">✅ COMPLETE</div>', unsafe_allow_html=True
-        )
-        stat_container.markdown(f"""
+        badge_cont.markdown('<div class="done-badge">✅ COMPLETE</div>', unsafe_allow_html=True)
+        stat_cont.markdown(f"""
         <div class="stat-bar">
             <div class="stat-pill green">✅ {saved_count} saved</div>
             <div class="stat-pill red">❌ {failed_count} failed</div>
@@ -350,7 +298,7 @@ if run_btn:
         status_text.success("All reports downloaded successfully!")
         st.balloons()
     else:
-        badge_container.markdown(
+        badge_cont.markdown(
             '<div class="done-badge" style="background:#fff1f2;border-color:#fca5a5;color:#991b1b;">⚠️ HALTED</div>',
             unsafe_allow_html=True
         )
