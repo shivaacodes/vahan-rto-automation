@@ -23,20 +23,25 @@ st.markdown("""
 
     /* Remove ALL vertical gaps inside columns */
     section[data-testid="stMain"] div[data-testid="stVerticalBlock"] {
+        gap: 0.6rem !important;
+    }
+    /* But keep zero gap at the very top of the right column */
+    div[data-testid="column"]:nth-child(2) > div > div[data-testid="stVerticalBlock"] {
         gap: 0 !important;
+        padding-top: 0 !important;
     }
 
     .title-header {
         font-size: 1.9rem;
         font-weight: 700;
         color: #2D3748 !important;
-        margin: 0 0 0.15rem 0;
+        margin: 0 0 0.2rem 0;
         line-height: 1.2;
     }
     .subtitle {
-        color: #718096 !important;
-        font-size: 0.9rem;
-        margin: 0 0 1rem 0;
+        color: #94a3b8 !important;
+        font-size: 0.88rem;
+        margin: 0 0 1.4rem 0;
     }
 
     /* Slim uppercase section labels */
@@ -176,7 +181,12 @@ with left_col:
         st.metric("X-Axis Pivot", config.FILTERS['X-Axis'])
 
     st.markdown('<div class="section-label">Output Destination</div>', unsafe_allow_html=True)
-    st.info(f"`{output_dir}`", icon="📁")
+    st.markdown(f"""
+    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px;
+                padding:10px 14px; font-family:'Menlo','Monaco',monospace;
+                font-size:0.78rem; color:#475569; word-break:break-all;">
+        📁 {output_dir}
+    </div>""", unsafe_allow_html=True)
 
     st.markdown('<div class="section-label">Execution Control</div>', unsafe_allow_html=True)
     run_btn      = st.button("▶  Initialize Data Extraction", type="primary")
