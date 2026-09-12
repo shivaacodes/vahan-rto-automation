@@ -173,9 +173,8 @@ output_dir = os.path.join(config.REPORTS_DIR, date_str)
 
 # ── LEFT COLUMN ──────────────────────────────────────────────────────────────
 with left_col:
-
     # Active Configuration
-    st.markdown('<div class="section-label">Active Configuration</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-label" style="margin-top:-0.5rem;">Active Configuration</div>', unsafe_allow_html=True)
     r1c1, r1c2 = st.columns(2)
     with r1c1:
         st.metric("Target State", config.FILTERS['State'].split('(')[0].strip())
@@ -202,24 +201,28 @@ with left_col:
 
 # ── RIGHT COLUMN ─────────────────────────────────────────────────────────────
 with right_col:
-    st.markdown('<div class="section-label">Live Terminal Output</div>', unsafe_allow_html=True)
     log_container = st.empty()
 
     def render_terminal(body_html):
         log_container.markdown(f"""
-        <div class="mac-terminal">
-            <div class="mac-terminal-header">
-                <div class="mac-dots">
-                    <div class="mac-dot red"></div>
-                    <div class="mac-dot yellow"></div>
-                    <div class="mac-dot green"></div>
+        <div style="margin-top:-0.5rem;">
+            <p style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;
+                      text-transform:uppercase;color:#94a3b8;margin-bottom:0.4rem;">
+                Live Terminal Output
+            </p>
+            <div class="mac-terminal">
+                <div class="mac-terminal-header">
+                    <div class="mac-dots">
+                        <div class="mac-dot red"></div>
+                        <div class="mac-dot yellow"></div>
+                        <div class="mac-dot green"></div>
+                    </div>
+                    <div class="mac-terminal-title">bash — download_reports.py</div>
                 </div>
-                <div class="mac-terminal-title">bash — download_reports.py</div>
+                <div class="mac-terminal-body">{body_html}</div>
             </div>
-            <div class="mac-terminal-body">{body_html}</div>
         </div>""", unsafe_allow_html=True)
 
-    # Idle state
     render_terminal('<span style="color:#6EE7B7;">vahan-bot \$</span> Waiting for extraction command...')
 
 # ── Run logic ────────────────────────────────────────────────────────────────
