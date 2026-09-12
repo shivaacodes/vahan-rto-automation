@@ -1,5 +1,6 @@
 import streamlit as st
 import subprocess
+import sys
 import os
 from datetime import datetime
 import config
@@ -228,7 +229,7 @@ if run_btn:
     total_rtos   = 87
 
     process = subprocess.Popen(
-        ["python", "-u", "download_reports.py"],
+        [sys.executable, "-u", "download_reports.py"],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         text=True, bufsize=1
     )

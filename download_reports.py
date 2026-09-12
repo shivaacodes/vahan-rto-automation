@@ -14,6 +14,10 @@ def setup_logger(log_dir):
     logger = logging.getLogger("VahanBot")
     logger.setLevel(logging.INFO)
     
+    # Prevent duplicate handlers on repeat calls
+    if logger.handlers:
+        return logger
+    
     # File handler
     fh = logging.FileHandler(log_file)
     fh.setLevel(logging.INFO)
@@ -84,7 +88,12 @@ async def process_rto(page, rto, output_dir, logger):
     
     # 5. Save file
     try:
-        rto_code = rto.split(' - ')[-1].split('(')[0].strip()
+        if '(' in rto and ')' in rto:
+            rto_code = rto.split('(')[-1].split(')')[0].strip()
+        elif ' - ' in rto:
+            rto_code = rto.split(' - ')[0].strip()
+        else:
+            rto_code = rto.replace(" ", "_")
     except:
         rto_code = rto.replace(" ", "_")
         
