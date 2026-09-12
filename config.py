@@ -34,7 +34,7 @@ SELECTORS = {
     "year_item": "ul#selectedYear_items li[data-label='{}']",
     
     "refresh_btn": "button:has-text('Refresh')",
-    "export_btn": "[id='vchgroupTable:xls']",
+    "export_btn": "a:has(img[src*='csv.png'])",
     "table_row": "tbody.ui-datatable-data tr"
 }
 

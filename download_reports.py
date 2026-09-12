@@ -31,12 +31,34 @@ def setup_logger(log_dir):
     
     return logger
 
-async def safe_select(page, label_selector, item_selector):
+async def wait_for_overlay(page):
+    try:
+        await page.wait_for_selector(".ui-widget-overlay", state="hidden", timeout=5000)
+        await asyncio.sleep(0.5)
+    except:
+        pass
+
+async def safe_select(page, label_selector, item_selector, expected_value=None):
     """Click a primefaces dropdown label and select an item, then wait for networkidle."""
+    await wait_for_overlay(page)
+    
+    # Check if already selected (if expected_value is provided)
+    if expected_value:
+        try:
+            current_text = await page.locator(label_selector).inner_text(timeout=2000)
+            if expected_value.strip() == current_text.strip():
+                return
+        except:
+            pass
+            
+    await wait_for_overlay(page)
+    # The Vahan site has overlapping layout grid elements, so force=True is required
+    # But we wait for the AJAX overlay to be hidden first so PrimeFaces accepts the click
     await page.locator(label_selector).click(force=True)
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(1) # Wait for dropdown animation
     await page.locator(item_selector).click(force=True)
     await page.wait_for_load_state("networkidle")
+    await wait_for_overlay(page)
     await asyncio.sleep(1) # Extra buffer for JS execution
 
 async def process_rto(page, rto, output_dir, logger):
@@ -46,10 +68,12 @@ async def process_rto(page, rto, output_dir, logger):
     await safe_select(page, config.SELECTORS["rto_label"], config.SELECTORS["rto_item_specific"].format(rto))
     
     # 2. Click Refresh
+    await wait_for_overlay(page)
     await page.locator(config.SELECTORS["refresh_btn"]).first.click(force=True)
     
     # 3. Wait for data to reload
     await page.wait_for_load_state("networkidle")
+    await wait_for_overlay(page)
     await page.wait_for_selector(config.SELECTORS["table_row"], timeout=config.TIMEOUTS["table_load"])
     await asyncio.sleep(2) # Give PrimeFaces time to rebind Export button
     
@@ -98,11 +122,11 @@ async def main():
             
             # Set Fixed Filters
             logger.info("Setting fixed filters...")
-            await safe_select(page, config.SELECTORS["state_label"], config.SELECTORS["state_items"].format(config.FILTERS["State"]))
-            await safe_select(page, config.SELECTORS["yaxis_label"], config.SELECTORS["yaxis_item"].format(config.FILTERS["Y-Axis"]))
-            await safe_select(page, config.SELECTORS["xaxis_label"], config.SELECTORS["xaxis_item"].format(config.FILTERS["X-Axis"]))
-            await safe_select(page, config.SELECTORS["yeartype_label"], config.SELECTORS["yeartype_item"].format(config.FILTERS["Year Type"]))
-            await safe_select(page, config.SELECTORS["year_label"], config.SELECTORS["year_item"].format(config.FILTERS["Year"]))
+            await safe_select(page, config.SELECTORS["state_label"], config.SELECTORS["state_items"].format(config.FILTERS["State"]), config.FILTERS["State"])
+            await safe_select(page, config.SELECTORS["yaxis_label"], config.SELECTORS["yaxis_item"].format(config.FILTERS["Y-Axis"]), config.FILTERS["Y-Axis"])
+            await safe_select(page, config.SELECTORS["xaxis_label"], config.SELECTORS["xaxis_item"].format(config.FILTERS["X-Axis"]), config.FILTERS["X-Axis"])
+            await safe_select(page, config.SELECTORS["yeartype_label"], config.SELECTORS["yeartype_item"].format(config.FILTERS["Year Type"]), config.FILTERS["Year Type"])
+            await safe_select(page, config.SELECTORS["year_label"], config.SELECTORS["year_item"].format(config.FILTERS["Year"]), config.FILTERS["Year"])
             
             logger.info("Waiting for RTO list to populate...")
             await page.wait_for_function('document.querySelectorAll("ul#selectedRto_items li").length > 1')
