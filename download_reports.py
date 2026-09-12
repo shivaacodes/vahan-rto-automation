@@ -1,0 +1,156 @@
+import asyncio
+import os
+import logging
+from datetime import datetime
+from playwright.async_api import async_playwright
+import config
+
+def setup_logger(log_dir):
+    os.makedirs(log_dir, exist_ok=True)
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    log_file = os.path.join(log_dir, f"run_{date_str}.log")
+    
+    logger = logging.getLogger("VahanBot")
+    logger.setLevel(logging.INFO)
+    
+    # File handler
+    fh = logging.FileHandler(log_file)
+    fh.setLevel(logging.INFO)
+    
+    # Console handler
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+    
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+    
+    return logger
+
+async def safe_select(page, label_selector, item_selector):
+    """Click a primefaces dropdown label and select an item, then wait for networkidle."""
+    await page.locator(label_selector).click()
+    await page.locator(item_selector).click()
+    await page.wait_for_load_state("networkidle")
+    await asyncio.sleep(1) # Extra buffer for JS execution
+
+async def process_rto(page, rto, output_dir, logger):
+    logger.info(f"Processing {rto}...")
+    
+    # 1. Select RTO
+    await safe_select(page, config.SELECTORS["rto_label"], config.SELECTORS["rto_item_specific"].format(rto))
+    
+    # 2. Click Refresh
+    await page.locator(config.SELECTORS["refresh_btn"]).first.click(force=True)
+    
+    # 3. Wait for data to reload
+    await page.wait_for_load_state("networkidle")
+    await page.wait_for_selector(config.SELECTORS["table_row"], timeout=config.TIMEOUTS["table_load"])
+    await asyncio.sleep(2) # Give PrimeFaces time to rebind Export button
+    
+    # 4. Click Export & capture download
+    async with page.expect_download() as download_info:
+        await page.locator(config.SELECTORS["export_btn"]).click(force=True)
+    download = await download_info.value
+    
+    # 5. Save file
+    try:
+        rto_code = rto.split(' - ')[-1].split('(')[0].strip()
+    except:
+        rto_code = rto.replace(" ", "_")
+        
+    filename = f"{rto_code}.xlsx"
+    file_path = os.path.join(output_dir, filename)
+    
+    # Overwrite if exists
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        
+    await download.save_as(file_path)
+    logger.info(f"Successfully saved {filename}")
+    return True
+
+async def main():
+    logger = setup_logger(config.LOGS_DIR)
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    output_dir = os.path.join(config.REPORTS_DIR, date_str)
+    os.makedirs(output_dir, exist_ok=True)
+    
+    logger.info(f"Starting Vahan report download for {date_str}")
+    
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        context = await browser.new_context(
+            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
+            accept_downloads=True
+        )
+        page = await context.new_page()
+        page.set_default_timeout(config.TIMEOUTS["global_timeout"])
+        
+        try:
+            logger.info("Navigating to target URL...")
+            await page.goto(config.TARGET_URL, wait_until="networkidle")
+            
+            # Set Fixed Filters
+            logger.info("Setting fixed filters...")
+            await safe_select(page, config.SELECTORS["state_label"], config.SELECTORS["state_items"].format(config.FILTERS["State"]))
+            await safe_select(page, config.SELECTORS["yaxis_label"], config.SELECTORS["yaxis_item"].format(config.FILTERS["Y-Axis"]))
+            await safe_select(page, config.SELECTORS["xaxis_label"], config.SELECTORS["xaxis_item"].format(config.FILTERS["X-Axis"]))
+            await safe_select(page, config.SELECTORS["yeartype_label"], config.SELECTORS["yeartype_item"].format(config.FILTERS["Year Type"]))
+            await safe_select(page, config.SELECTORS["year_label"], config.SELECTORS["year_item"].format(config.FILTERS["Year"]))
+            
+            logger.info("Waiting for RTO list to populate...")
+            await page.wait_for_function('document.querySelectorAll("ul#selectedRto_items li").length > 1')
+            await asyncio.sleep(1)
+            
+            # Extract RTOs
+            rto_elements = await page.locator(config.SELECTORS["rto_items"]).all()
+            rtos = []
+            for el in rto_elements:
+                label = await el.get_attribute("data-label")
+                if label and "All Vahan4 Running Office" not in label:
+                    rtos.append(label)
+                    
+            logger.info(f"Found {len(rtos)} RTOs to process.")
+            
+            failed_rtos = []
+            
+            # Process each RTO
+            for i, rto in enumerate(rtos):
+                try:
+                    await process_rto(page, rto, output_dir, logger)
+                except Exception as e:
+                    logger.error(f"Failed to process {rto}: {str(e)}")
+                    failed_rtos.append(rto)
+                    
+                if i < len(rtos) - 1:
+                    await asyncio.sleep(config.TIMEOUTS["between_iterations"])
+            
+            # Retry logic
+            if failed_rtos:
+                logger.info(f"Retrying {len(failed_rtos)} failed RTOs...")
+                final_failed = []
+                for rto in failed_rtos:
+                    try:
+                        await process_rto(page, rto, output_dir, logger)
+                    except Exception as e:
+                        logger.error(f"Retry failed for {rto}: {str(e)}")
+                        final_failed.append(rto)
+                
+                if final_failed:
+                    logger.warning(f"Run completed with {len(final_failed)} failures: {final_failed}")
+                else:
+                    logger.info("Run completed successfully after retries.")
+            else:
+                logger.info("Run completed successfully with 0 failures.")
+                
+        except Exception as e:
+            logger.error(f"Fatal error during execution: {str(e)}")
+        finally:
+            await browser.close()
+
+if __name__ == "__main__":
+    asyncio.run(main())
