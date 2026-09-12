@@ -4,35 +4,105 @@ import os
 from datetime import datetime
 import config
 
-st.set_page_config(page_title="Vahan RTO Downloader", page_icon="📊", layout="centered")
+# Must be the first Streamlit command
+st.set_page_config(page_title="Vahan RTO Dashboard", page_icon="🏛️", layout="centered")
 
-st.title("🚗 Vahan RTO Report Downloader")
-st.markdown("This dashboard automates downloading daily Excel reports for all 87 Kerala RTOs.")
+# Custom CSS for a modern, professional look
+st.markdown("""
+    <style>
+    /* Hide Streamlit default branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Modernize typography and spacing */
+    .main .block-container {
+        padding-top: 2rem;
+        font-family: 'Inter', -apple-system, sans-serif;
+    }
+    
+    /* Style the main title */
+    .title-header {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #1E293B;
+        margin-bottom: 0.5rem;
+    }
+    .subtitle {
+        color: #64748B;
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+    }
+    
+    /* Style the metrics cards */
+    div[data-testid="metric-container"] {
+        background-color: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        padding: 1rem;
+        border-radius: 8px;
+    }
+    
+    /* Style the run button */
+    .stButton>button {
+        width: 100%;
+        background-color: #0F172A;
+        color: white;
+        border-radius: 6px;
+        padding: 0.75rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+        border: none;
+        transition: all 0.2s ease;
+    }
+    .stButton>button:hover {
+        background-color: #334155;
+        border: none;
+        color: white;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Sidebar with configuration
-st.sidebar.header("Current Configuration")
-st.sidebar.markdown(f"**State:** {config.FILTERS['State']}")
-st.sidebar.markdown(f"**Year:** {config.FILTERS['Year']}")
-st.sidebar.markdown(f"**Y-Axis:** {config.FILTERS['Y-Axis']}")
-st.sidebar.markdown(f"**X-Axis:** {config.FILTERS['X-Axis']}")
+# Header Section
+st.markdown('<div class="title-header">🏛️ Vahan Analytics Downloader</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Automated extraction system for daily RTO reports</div>', unsafe_allow_html=True)
+st.divider()
 
-# Paths
+# Configuration Metrics Section
+st.markdown("### Active Configuration")
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric(label="Target State", value=config.FILTERS['State'].split('(')[0].strip())
+with col2:
+    st.metric(label="Report Year", value=config.FILTERS['Year'])
+with col3:
+    st.metric(label="Y-Axis Pivot", value=config.FILTERS['Y-Axis'])
+with col4:
+    st.metric(label="X-Axis Pivot", value=config.FILTERS['X-Axis'])
+
+st.write("") # Spacer
+
+# Output Information
 date_str = datetime.now().strftime("%Y-%m-%d")
 output_dir = os.path.join(config.REPORTS_DIR, date_str)
 
-st.write(f"**Today's Output Folder:** `{output_dir}`")
+st.info(f"📁 **Output Destination:** `{output_dir}`", icon="ℹ️")
 
-if st.button("▶️ Start Download", type="primary"):
-    st.info("Starting automation in the background. Please do not close this window until finished.")
+# Control Section
+st.markdown("### Execution Control")
+
+if st.button("Initialize Data Extraction", type="primary"):
     
     progress_bar = st.progress(0)
     status_text = st.empty()
-    log_container = st.empty()
     
-    # We will capture logs to display them
+    # We put the logs in an expander so it doesn't clutter the modern UI
+    with st.expander("Terminal Output (Live Logs)", expanded=True):
+        log_container = st.empty()
+    
     log_output = []
     
-    # Run the existing script as a subprocess so we can capture stdout in real-time
+    # Run the existing script as a subprocess
     process = subprocess.Popen(
         ["python", "-u", "download_reports.py"],
         stdout=subprocess.PIPE,
@@ -42,7 +112,7 @@ if st.button("▶️ Start Download", type="primary"):
     )
     
     processed_count = 0
-    total_rtos = 87 # Default assumption, dynamically updated if we see it in logs
+    total_rtos = 87 
     
     for line in iter(process.stdout.readline, ''):
         line = line.strip()
@@ -51,14 +121,13 @@ if st.button("▶️ Start Download", type="primary"):
             
         log_output.append(line)
         
-        # Keep only last 15 lines for the UI to stay clean
-        display_logs = "\n".join(log_output[-15:])
+        # Keep only last 12 lines for the UI to stay clean
+        display_logs = "\n".join(log_output[-12:])
         log_container.code(display_logs, language="text")
         
         # Update progress based on log messages
         if "Found" in line and "RTOs to process" in line:
             try:
-                # Example: "Found 87 RTOs to process."
                 total_rtos = int(line.split("Found ")[1].split(" ")[0])
             except:
                 pass
@@ -67,13 +136,14 @@ if st.button("▶️ Start Download", type="primary"):
             processed_count += 1
             progress_pct = min(processed_count / total_rtos, 1.0)
             progress_bar.progress(progress_pct)
-            status_text.text(f"Processed {processed_count} of {total_rtos} RTOs...")
+            status_text.markdown(f"**Status:** Processing `{processed_count}` of `{total_rtos}` records...")
             
     process.stdout.close()
     return_code = process.wait()
     
     if return_code == 0:
         progress_bar.progress(1.0)
-        status_text.success(f"✅ Finished! All reports are saved in: {output_dir}")
+        status_text.success(f"✅ **Extraction Complete.** All files are secured in the output directory.")
+        st.balloons()
     else:
-        status_text.error("⚠️ The script exited with an error. Check the logs above.")
+        status_text.error("⚠️ **Extraction Halted.** The system encountered a critical error. Please review the terminal output.")
