@@ -120,6 +120,74 @@ st.markdown("""
         height: 340px;
         overflow-y: auto;
     }
+
+    /* Green progress bar */
+    div[data-testid="stProgressBar"] > div > div > div {
+        background: linear-gradient(90deg, #22c55e, #16a34a) !important;
+        border-radius: 9999px !important;
+    }
+    div[data-testid="stProgressBar"] > div {
+        background-color: #dcfce7 !important;
+        border-radius: 9999px !important;
+    }
+
+    /* Live pulse badge */
+    @keyframes pulse-dot {
+        0%   { opacity: 1; }
+        50%  { opacity: 0.3; }
+        100% { opacity: 1; }
+    }
+    .live-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #dcfce7;
+        color: #15803d;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 9999px;
+        border: 1px solid #86efac;
+        margin-bottom: 0.5rem;
+    }
+    .live-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #22c55e;
+        animation: pulse-dot 1.2s ease-in-out infinite;
+    }
+    .done-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #f0fdf4;
+        color: #166534;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 9999px;
+        border: 1px solid #86efac;
+        margin-bottom: 0.5rem;
+    }
+    .stat-bar {
+        display: flex;
+        gap: 12px;
+        margin-top: 0.5rem;
+    }
+    .stat-pill {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #1e293b;
+        flex: 1;
+        text-align: center;
+    }
+    .stat-pill.green { background: #f0fdf4; border-color: #86efac; color: #166534; }
+    .stat-pill.red   { background: #fff1f2; border-color: #fca5a5; color: #991b1b; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -190,7 +258,18 @@ if run_btn:
     render_terminal('<span style="color:#6EE7B7;">vahan-bot \$</span> Initializing Vahan Extraction Protocol...<br>')
     progress_bar.progress(0)
 
-    log_output = []
+    badge_container = left_col.empty()
+    stat_container  = left_col.empty()
+
+    badge_container.markdown(
+        '<div class="live-badge"><div class="live-dot"></div> RUNNING</div>',
+        unsafe_allow_html=True
+    )
+
+    log_output     = []
+    saved_count    = 0
+    failed_count   = 0
+    total_rtos     = 87
 
     process = subprocess.Popen(
         ["python", "-u", "download_reports.py"],
@@ -200,19 +279,28 @@ if run_btn:
         bufsize=1
     )
 
-    processed_count = 0
-    total_rtos = 87
+    def colorize(line):
+        """Return HTML-coloured terminal line based on content."""
+        prompt = '<span style="color:#6EE7B7;">vahan-bot \$</span> '
+        if "Successfully saved" in line:
+            return prompt + f'<span style="color:#4ADE80;">{line}</span>'
+        elif "ERROR" in line or "Failed" in line or "Retry" in line:
+            return prompt + f'<span style="color:#F87171;">{line}</span>'
+        elif "WARNING" in line:
+            return prompt + f'<span style="color:#FBBF24;">{line}</span>'
+        elif "Found" in line and "RTOs" in line:
+            return prompt + f'<span style="color:#60A5FA;">{line}</span>'
+        else:
+            return prompt + line
 
     for line in iter(process.stdout.readline, ''):
         line = line.strip()
         if not line:
             continue
 
-        log_output.append(line)
+        log_output.append(colorize(line))
 
-        display_lines = log_output[-18:]  # more lines since terminal is taller
-        display_logs = '<span style="color:#6EE7B7;">vahan-bot \$</span> ' + \
-                       '<br><span style="color:#6EE7B7;">vahan-bot \$</span> '.join(display_lines)
+        display_logs = "<br>".join(log_output[-18:])
         render_terminal(display_logs)
 
         if "Found" in line and "RTOs to process" in line:
@@ -221,18 +309,47 @@ if run_btn:
             except:
                 pass
 
-        if "Successfully saved" in line or "Failed to process" in line:
-            processed_count += 1
-            progress_pct = min(processed_count / total_rtos, 1.0)
+        if "Successfully saved" in line:
+            saved_count += 1
+            progress_pct = min((saved_count + failed_count) / total_rtos, 1.0)
             progress_bar.progress(progress_pct)
-            status_text.markdown(f"**Status:** `{processed_count}` / `{total_rtos}` RTOs processed")
+
+        if "Failed to process" in line or "Retry failed" in line:
+            failed_count += 1
+            progress_pct = min((saved_count + failed_count) / total_rtos, 1.0)
+            progress_bar.progress(progress_pct)
+
+        # Update live stat pills every iteration
+        stat_container.markdown(f"""
+        <div class="stat-bar">
+            <div class="stat-pill green">✅ {saved_count} saved</div>
+            <div class="stat-pill red">❌ {failed_count} failed</div>
+            <div class="stat-pill">{total_rtos - saved_count - failed_count} remaining</div>
+        </div>""", unsafe_allow_html=True)
+
+        status_text.markdown(
+            f"**Progress:** `{saved_count + failed_count}` / `{total_rtos}` RTOs processed"
+        )
 
     process.stdout.close()
     return_code = process.wait()
 
     if return_code == 0:
         progress_bar.progress(1.0)
-        status_text.success("✅ **Extraction Complete.** All files secured in output directory.")
+        badge_container.markdown(
+            '<div class="done-badge">✅ COMPLETE</div>', unsafe_allow_html=True
+        )
+        stat_container.markdown(f"""
+        <div class="stat-bar">
+            <div class="stat-pill green">✅ {saved_count} saved</div>
+            <div class="stat-pill red">❌ {failed_count} failed</div>
+            <div class="stat-pill">0 remaining</div>
+        </div>""", unsafe_allow_html=True)
+        status_text.success("All reports downloaded successfully!")
         st.balloons()
     else:
-        status_text.error("⚠️ **Extraction Halted.** Check terminal output for details.")
+        badge_container.markdown(
+            '<div class="done-badge" style="background:#fff1f2;border-color:#fca5a5;color:#991b1b;">⚠️ HALTED</div>',
+            unsafe_allow_html=True
+        )
+        status_text.error("Extraction halted — check terminal for details.")
