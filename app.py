@@ -64,6 +64,52 @@ st.markdown("""
         border: none;
         color: white;
     }
+    
+    /* Mac Terminal Window */
+    .mac-terminal {
+        background-color: #1E1E1E;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        overflow: hidden;
+        margin-top: 1rem;
+        font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    }
+    .mac-terminal-header {
+        background-color: #323232;
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid #111;
+    }
+    .mac-dots {
+        display: flex;
+        gap: 6px;
+    }
+    .mac-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+    .mac-dot.red { background-color: #FF5F56; }
+    .mac-dot.yellow { background-color: #FFBD2E; }
+    .mac-dot.green { background-color: #27C93F; }
+    .mac-terminal-title {
+        color: #999;
+        font-size: 0.85rem;
+        flex-grow: 1;
+        text-align: center;
+        font-family: -apple-system, sans-serif;
+        margin-right: 42px; /* balance the dots width */
+    }
+    .mac-terminal-body {
+        padding: 12px;
+        color: #F8F8F2;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        height: 250px;
+        overflow-y: auto;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -101,9 +147,26 @@ if st.button("Initialize Data Extraction", type="primary"):
     progress_bar = st.progress(0)
     status_text = st.empty()
     
-    # We put the logs in an expander so it doesn't clutter the modern UI
-    with st.expander("Terminal Output (Live Logs)", expanded=True):
-        log_container = st.empty()
+    # We put the logs in a custom Mac-like terminal window
+    log_container = st.empty()
+    
+    def render_terminal(logs_text):
+        terminal_html = f"""
+        <div class="mac-terminal">
+            <div class="mac-terminal-header">
+                <div class="mac-dots">
+                    <div class="mac-dot red"></div>
+                    <div class="mac-dot yellow"></div>
+                    <div class="mac-dot green"></div>
+                </div>
+                <div class="mac-terminal-title">bash — download_reports.py</div>
+            </div>
+            <div class="mac-terminal-body">{logs_text}</div>
+        </div>
+        """
+        log_container.markdown(terminal_html, unsafe_allow_html=True)
+        
+    render_terminal("Initializing Vahan Extraction Protocol...<br>")
     
     log_output = []
     
@@ -127,8 +190,8 @@ if st.button("Initialize Data Extraction", type="primary"):
         log_output.append(line)
         
         # Keep only last 12 lines for the UI to stay clean
-        display_logs = "\n".join(log_output[-12:])
-        log_container.code(display_logs, language="text")
+        display_logs = "<br>".join(log_output[-12:])
+        render_terminal(display_logs)
         
         # Update progress based on log messages
         if "Found" in line and "RTOs to process" in line:
