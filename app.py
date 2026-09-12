@@ -117,7 +117,7 @@ st.markdown("""
         font-size: 0.82rem;
         line-height: 1.6;
         white-space: pre-wrap;
-        height: 340px;
+        height: 480px;
         overflow-y: auto;
     }
 
@@ -196,16 +196,18 @@ st.markdown('<div class="title-header">🏛️ Vahan Analytics Downloader</div>'
 st.markdown('<div class="subtitle">Automated extraction system for daily RTO reports</div>', unsafe_allow_html=True)
 st.divider()
 
-# ── Configuration Metrics (full width, above the split) ─────────────────────
+# ── Configuration Metrics (2×2 grid above the split) ───────────────────────
 st.markdown("### Active Configuration")
-col1, col2, col3, col4 = st.columns(4)
-with col1:
+row1_col1, row1_col2 = st.columns(2)
+with row1_col1:
     st.metric(label="Target State", value=config.FILTERS['State'].split('(')[0].strip())
-with col2:
+with row1_col2:
     st.metric(label="Report Year", value=config.FILTERS['Year'])
-with col3:
+
+row2_col1, row2_col2 = st.columns(2)
+with row2_col1:
     st.metric(label="Y-Axis Pivot", value=config.FILTERS['Y-Axis'])
-with col4:
+with row2_col2:
     st.metric(label="X-Axis Pivot", value=config.FILTERS['X-Axis'])
 
 st.write("")  # Spacer
