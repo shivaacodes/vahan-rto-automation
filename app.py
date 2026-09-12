@@ -144,12 +144,11 @@ st.markdown("""
         margin-right:42px;
     }
     .mac-terminal-body {
-        padding:14px; color:#F8F8F2;
-        font-size:0.82rem; line-height:1.7;
-        white-space:pre-wrap;
-        height: calc(100vh - 6.5rem);
-        min-height: 500px;
-        overflow-y:auto;
+        padding: 14px; color: #F8F8F2;
+        font-size: 0.82rem; line-height: 1.7;
+        white-space: pre-wrap;
+        height: 380px;
+        overflow-y: auto;
     }
     </style>
 """, unsafe_allow_html=True)
