@@ -15,6 +15,11 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
+    /* Set app background to a light beige/cream */
+    .stApp {
+        background-color: #FBF9F6;
+    }
+    
     /* Modernize typography and spacing */
     .main .block-container {
         padding-top: 2rem;
@@ -25,19 +30,20 @@ st.markdown("""
     .title-header {
         font-size: 2.2rem;
         font-weight: 700;
-        color: #1E293B;
+        color: #2D3748;
         margin-bottom: 0.5rem;
     }
     .subtitle {
-        color: #64748B;
+        color: #718096;
         font-size: 1.1rem;
         margin-bottom: 2rem;
     }
     
     /* Style the metrics cards */
     div[data-testid="metric-container"] {
-        background-color: #F8FAFC;
+        background-color: #FFFFFF;
         border: 1px solid #E2E8F0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         padding: 1rem;
         border-radius: 8px;
     }
