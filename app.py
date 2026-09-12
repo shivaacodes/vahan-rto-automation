@@ -13,7 +13,7 @@ st.markdown("""
     header {visibility: hidden;}
 
     .main .block-container {
-        padding-top: 2rem;
+        padding-top: 1.5rem;
         padding-left: 2.5rem;
         padding-right: 2.5rem;
         font-family: 'Inter', -apple-system, sans-serif;
@@ -23,12 +23,12 @@ st.markdown("""
         font-size: 2rem;
         font-weight: 700;
         color: #2D3748 !important;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.15rem;
     }
     .subtitle {
         color: #718096 !important;
         font-size: 0.95rem;
-        margin-bottom: 0;
+        margin-bottom: 0.75rem;
     }
 
     /* Section label */
@@ -39,7 +39,7 @@ st.markdown("""
         text-transform: uppercase;
         color: #94a3b8;
         margin-bottom: 0.4rem;
-        margin-top: 1.2rem;
+        margin-top: 0.75rem;
     }
 
     /* Metric cards */
@@ -164,7 +164,6 @@ st.markdown("""
 # ── Minimal full-width header ────────────────────────────────────────────────
 st.markdown('<div class="title-header">🏛️ Vahan Analytics Downloader</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Automated extraction system for daily RTO reports</div>', unsafe_allow_html=True)
-st.divider()
 
 # ── Two columns — everything below the header lives inside them ──────────────
 left_col, right_col = st.columns([1, 1.5], gap="large")
